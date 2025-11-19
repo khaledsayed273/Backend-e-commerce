@@ -4,18 +4,14 @@ const {
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class subsubcategory extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
+
     static associate(models) {
       // define association here
-      subsubcategory.belongsTo(models.subcategory, { foreignKey: 'subCategorySlug', targetKey: 'slug', as: 'sub_sub_category' })
+      subsubcategory.belongsTo(models.subcategory, { foreignKey: 'subCategorySlug', targetKey: 'slug', as: 'sub_category' })
       subsubcategory.hasMany(models.product, {
         foreignKey: 'subSubCategorySlug',
-        targetKey: 'slug',
-        as: 'subSubCategory',
+        sourceKey: 'slug',
+        as: 'products',
       });
     }
   }
@@ -23,7 +19,13 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     slug: DataTypes.STRING,
     placeholder: DataTypes.STRING,
-    image: DataTypes.STRING
+    image: {
+      type: DataTypes.STRING,
+      get() {
+        const value = this.getDataValue('image');
+        return value ? `${process.env.baseUrl}/${value.replace(/\\/g, '/')}` : null;
+      }
+    }
   }, {
     sequelize,
     modelName: 'subsubcategory',

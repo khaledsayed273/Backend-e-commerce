@@ -10,19 +10,14 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   product_image.init({
-    imageUrl: DataTypes.STRING,
-    // image: {
-    //   type: DataTypes.VIRTUAL,
-    //   get() {
-    //     const rawValue = this.getDataValue('imageUrl');
-    //     const baseUrl = process.env.BASE_URL || 'http://localhost:8080/api/v1';
-    //     if (rawValue && !rawValue.startsWith('http')) {
-    //       const fixedPath = rawValue.replace(/\\/g, '/');
-    //       return `${baseUrl}/${fixedPath}`;
-    //     }
-    //     return rawValue ? rawValue.replace(/\\/g, '/') : null;
-    //   }
-    // },
+    imageUrl: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      get() {
+        const value = this.getDataValue('imageUrl');
+        return value ? `${process.env.baseUrl}/${value.replace(/\\/g, '/')}` : null;
+      }
+    },
     placeholder: DataTypes.TEXT,
     isPrimary: DataTypes.BOOLEAN
   }, {

@@ -42,7 +42,7 @@ const all = async (req, res) => {
     }
 }
 
-const add = async (req, res) => {
+const create = async (req, res) => {
 
     const {
         code,
@@ -117,7 +117,7 @@ const add = async (req, res) => {
 }
 
 const update = async (req, res) => {
-    const { couponId } = req.params
+    const { id } = req.params
 
     const {
         code,
@@ -130,18 +130,15 @@ const update = async (req, res) => {
         minOrderValue
     } = req.body;
 
-
-    if (!couponId || couponId === "") {
+    if (!id || id === "") {
         return res.status(400).json({
             status: false,
-            message: "couponId is required"
+            message: "id is required"
         })
     }
 
-
     try {
-
-        const coupon = await models.coupon.findByPk(couponId)
+        const coupon = await models.coupon.findByPk(id)
         if (!coupon) {
             return res.status(404).json({
                 status: false,
@@ -158,16 +155,11 @@ const update = async (req, res) => {
             maxDiscount,
             minOrderValue,
             expiresAt
-        }, {
-            where: {
-                id: couponId
-            }
-        })
+        }, { where: { id } })
 
         res.status(201).json({
             status: true,
             message: "coupon updated successfully",
-
         })
 
     } catch (e) {
@@ -178,30 +170,25 @@ const update = async (req, res) => {
     }
 }
 
-const deleteCoupon = async (req, res) => {
-    const { couponId } = req.params
+const destroy = async (req, res) => {
+    const { id } = req.params
 
-    if (!couponId || couponId === "") {
+    if (!id || id === "") {
         return res.status(400).json({
             status: false,
-            message: "couponId is required"
+            message: "id is required"
         })
     }
 
-
     try {
-        const coupon = await models.coupon.findByPk(couponId)
+        const coupon = await models.coupon.findByPk(id)
         if (!coupon) {
             return res.status(404).json({
                 status: false,
                 message: "coupon is not defiend",
             })
         }
-        await models.coupon.destroy({
-            where: {
-                id: couponId
-            }
-        })
+        await models.coupon.destroy({ where: { id } })
 
         res.status(201).json({
             status: true,
@@ -216,4 +203,4 @@ const deleteCoupon = async (req, res) => {
     }
 }
 
-module.exports = { all, add, update, deleteCoupon }
+module.exports = { all, create, update, destroy }

@@ -6,14 +6,10 @@ const all = async (req, res) => {
     try {
 
         const data = await models.setting.findOne();
-        const dataWithImageUrl = data?.toJSON();
-        if (dataWithImageUrl?.logo) {
-            dataWithImageUrl.logo = `${process.env.baseUrl}/${dataWithImageUrl.logo.replace(/\\/g, '/')}`;
-        }
 
         res.status(200).json({
             status: true,
-            data: dataWithImageUrl
+            data
         })
     } catch (e) {
         console.log(e);

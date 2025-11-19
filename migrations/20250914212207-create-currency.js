@@ -1,36 +1,28 @@
 'use strict';
-
-
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('product_images', {
+    await queryInterface.createTable('currencies', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      productId: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'products',
-          key: 'id'
-        },
-        onDelete: 'CASCADE'
-      },
-      imageUrl: {
+      code: {
         type: Sequelize.STRING,
-        allowNull: false,
+        unique: true
       },
-      placeholder: {
-        type: Sequelize.TEXT('long'),
-        allowNull: false,
+      name: {
+        type: Sequelize.STRING
       },
-      isPrimary: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
+      symbol: {
+        type: Sequelize.STRING
+      },
+      exchange_rate: {
+        type: Sequelize.DECIMAL(10, 4),
+        allowNull: false,
+        defaultValue: 1.0,
       },
       createdAt: {
         allowNull: false,
@@ -43,6 +35,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('product_images');
+    await queryInterface.dropTable('currencies');
   }
 };

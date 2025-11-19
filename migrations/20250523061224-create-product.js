@@ -21,6 +21,19 @@ module.exports = {
         type: Sequelize.DECIMAL(10, 2),
         defaultValue: 0,
       },
+      sold: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0,
+      },
+      sku: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true,
+      },
+      variants: {
+        type: Sequelize.JSON,
+        allowNull: true,
+      },
       quantity: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -50,6 +63,7 @@ module.exports = {
           model: 'categories',
           key: 'slug',
         },
+        onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
       subCategorySlug: {
@@ -59,6 +73,7 @@ module.exports = {
           model: 'subcategories',
           key: 'slug',
         },
+        onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
       subSubCategorySlug: {
@@ -68,6 +83,7 @@ module.exports = {
           model: 'subsubcategories',
           key: 'slug',
         },
+        onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
       },
       brandSlug: {
@@ -77,6 +93,7 @@ module.exports = {
           model: 'brands',
           key: 'slug',
         },
+        onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
       averageRating: {

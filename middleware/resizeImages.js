@@ -19,7 +19,8 @@ const resizeImages = async (req, res, next) => {
 
         for (const file of req.files) {
             const originalname = file.originalname.split('.')[0] || file.originalname;
-            const fileName = `${req.body.name.trim().toLowerCase()}-${Date.now()}-${originalname}.webp`;
+            const name = req?.body?.name?.trim()?.toLowerCase() || "ads"
+            const fileName = `${name}-${Date.now()}-${originalname}.webp`;
             const imagePath = path.join(imageDir, fileName);
 
             await sharp(file.buffer)

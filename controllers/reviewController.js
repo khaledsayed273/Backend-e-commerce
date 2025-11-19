@@ -1,9 +1,7 @@
 const models = require("../models");
 const updateRatingStats = require("../utils/updateRatingStats");
-const convertToBase64 = require('../utils/convertToBase64');
 
 const all = async (req, res) => {
-
     const { limit = 10, page = 1, } = req.query
     const { productId } = req.params
 
@@ -16,7 +14,6 @@ const all = async (req, res) => {
 
     try {
         const offset = (parseInt(page) - 1) * parseInt(limit);
-
         const { count, rows } = await models.review.findAndCountAll({
             where: {
                 productId
@@ -24,9 +21,7 @@ const all = async (req, res) => {
             limit: parseInt(limit),
             offset,
         });
-
         const totalPages = Math.ceil(count / parseInt(limit));
-
         res.status(200).json({
             status: true,
             total: count,
@@ -44,12 +39,9 @@ const all = async (req, res) => {
     }
 }
 
-const add = async (req, res) => {
-
+const create = async (req, res) => {
     const { comment, rating } = req.body;
-
     const { productId, userId } = req.params
-
     if (!rating || rating === "") {
         return res.status(400).json({
             status: false,
@@ -172,7 +164,7 @@ const update = async (req, res) => {
     }
 }
 
-const deleteReview = async (req, res) => {
+const destroy = async (req, res) => {
     const { userId, reviewId } = req.params
 
     if (!userId || userId === "") {
@@ -220,4 +212,4 @@ const deleteReview = async (req, res) => {
     }
 }
 
-module.exports = { all, add, update, deleteReview }
+module.exports = { all, create, update, destroy }

@@ -4,7 +4,6 @@ const models = require('../models');
 const verifyToken = (...role) => {
     return async (req, res, next) => {
 
-        
         const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
 
         if (!token) {
@@ -16,7 +15,6 @@ const verifyToken = (...role) => {
 
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
             const user = await models.user.findByPk(decoded.id);
 
             if (!user) {
@@ -46,7 +44,7 @@ const verifyToken = (...role) => {
             req.user = user;
             next();
         } catch (error) {
-            return res.status(403).json({
+            return res.status(401).json({
                 status: false,
                 message: "Failed to authenticate token",
                 error: error.message

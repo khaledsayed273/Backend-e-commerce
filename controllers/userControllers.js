@@ -74,54 +74,6 @@ const all = async (req, res) => {
     }
 }
 
-const login = async (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || username === "" || !password || password === "") {
-        return res.status(400).json({
-            status: false,
-            message: "username and password are required"
-        })
-    }
-
-    try {
-        const user = await models.user.findOne({
-            where: { username, status: "active" },
-            attributes: ['password', 'id', 'email', 'role', 'tokenVersion']
-        });
-
-        if (!user) {
-            return res.status(404).json({
-                status: false,
-                message: "user not found"
-            })
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordValid) {
-            return res.status(401).json({
-                status: false,
-                message: "invalid user or password"
-            })
-        }
-
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion, }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.status(200).json({
-            status: true,
-            userId: user.id,
-            role: user.role,
-            token,
-        })
-    } catch (e) {
-        res.status(500).json({
-            message: "server error",
-            error: e
-        })
-    }
-}
-
 const register = async (req, res) => {
     let imageUrl;
 
@@ -170,26 +122,88 @@ const register = async (req, res) => {
     }
 }
 
-const getUserById = async (req, res) => {
-    const { userId } = req.params;
+const login = async (req, res) => {
+    const { username, password } = req.body;
 
-    if (!userId || userId === "") {
+    if (!username || username === "" || !password || password === "") {
         return res.status(400).json({
             status: false,
-            message: "userId is required"
+            message: "username and password are required"
         })
     }
 
     try {
-        if (req.user.id != userId) {
+        const user = await models.user.findOne({
+            where: { username, status: "active" },
+            attributes: ['password', 'id', 'email', 'role', 'tokenVersion']
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                status: false,
+                message: "user not found"
+            })
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                status: false,
+                message: "invalid user or password"
+            })
+        }
+
+        const accessToken = jwt.sign(
+            { id: user.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        const refreshToken = jwt.sign(
+            { id: user.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 أيام
+        });
+
+        res.status(200).json({
+            status: true,
+            id: user.id,
+            role: user.role,
+            accessToken,
+        })
+    } catch (e) {
+        res.status(500).json({
+            message: "server error",
+            error: e
+        })
+    }
+}
+
+const select = async (req, res) => {
+    const { id } = req.params;
+
+    if (!id || id === "") {
+        return res.status(400).json({
+            status: false,
+            message: "id is required"
+        })
+    }
+
+    try {
+        if (req.user.id != id) {
             return res.status(403).json({
                 status: false,
                 message: "Forbidden: You do not have access to this user"
             });
         }
-
-
-        req.user.image = req.user.image ? `${process.env.baseUrl}/${req.user.image.replace(/\\/g, '/')}` : null;
 
         res.status(200).json({
             status: true,
@@ -204,22 +218,22 @@ const getUserById = async (req, res) => {
 }
 
 const update = async (req, res) => {
-    const { userId } = req.params
+    const { id } = req.params
     const { firstname, lastname, username, email, oldPassword, newPassword, phone } = req.body
 
-    if (!userId || userId === "") {
+    if (!id || id === "") {
         if (req?.image) {
             deleteFile(req.image)
         }
         return res.status(400).json({
             status: false,
-            message: "userId is required"
+            message: "id is required"
         })
     }
 
     try {
-        
-        const user = await models.user.findByPk(userId);
+
+        const user = await models.user.findByPk(id);
         if (!user) {
             if (req?.image) {
                 deleteFile(req.image)
@@ -246,7 +260,6 @@ const update = async (req, res) => {
             }
             return res.status(401).json({ message: 'Token Expired' });
         }
-
         if (oldPassword && newPassword) {
             const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
             if (!isPasswordValid) {
@@ -286,14 +299,8 @@ const update = async (req, res) => {
             deleteFile(user.image)
         }
 
-        await models.user.update(
-            newData,
-            {
-                where: {
-                    id: userId,
-                },
-            }
-        );
+        await models.user.update(newData, { where: { id } });
+
         res.status(200).json({
             status: true,
             message: "user updated successfully",
@@ -309,12 +316,12 @@ const update = async (req, res) => {
     }
 }
 
-const deleteUser = async (req, res) => {
-    const { userId } = req.params
+const destroy = async (req, res) => {
+    const { id } = req.params
 
     try {
 
-        if (req.user.id != userId) {
+        if (req.user.id != id) {
             return res.status(403).json({
                 status: false,
                 message: "Forbidden: You do not have access to this user"
@@ -325,13 +332,8 @@ const deleteUser = async (req, res) => {
             deleteFile(req.user.image)
         }
 
-        await models.user.destroy(
-            {
-                where: {
-                    id: userId,
-                },
-            }
-        );
+        await models.user.destroy({ where: { id } });
+
         res.status(200).json({
             status: true,
             message: "user deleted successfully",
@@ -344,4 +346,45 @@ const deleteUser = async (req, res) => {
     }
 }
 
-module.exports = { all, login, register, getUserById, update, deleteUser }
+const refresh = async (req, res) => {
+    const token = req.cookies.refreshToken;
+    if (!token) {
+        return res.status(401).json({ status: false, message: "No refresh token" });
+    }
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+        const user = await models.user.findByPk(payload.id);
+        if (!user || user.tokenVersion !== payload.tokenVersion) {
+            return res.status(401).json({ status: false, message: "Invalid or expired refresh token" });
+        }
+
+        user.tokenVersion += 1;
+        await user.save();
+
+        const newAccessToken = jwt.sign(
+            { id: payload.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+        const newRefreshToken = jwt.sign(
+            { id: user.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production" || false,
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        return res.status(200).json({ status: true, accessToken: newAccessToken });
+    } catch (err) {
+        return res.status(401).json({ status: false, message: "Invalid refresh token" });
+    }
+};
+
+module.exports = { all, register, login, select, update, destroy, refresh }

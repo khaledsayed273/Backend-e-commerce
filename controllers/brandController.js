@@ -1,60 +1,62 @@
-const { Op } = require("sequelize");
+const { Op, fn, col } = require("sequelize");
 const { deleteFile, deleteFiles } = require("../middleware/deleteFile");
 const models = require("../models");
-const slugify = require('slugify')
+const slugify = require('slugify');
 
 const all = async (req, res) => {
-
-    const { name, limit = 10, page = 1 } = req.query;
+    const { name, limit = 20, page = 1 } = req.query;
 
     try {
-
         const offset = (parseInt(page) - 1) * parseInt(limit);
-
-        const { count, rows } = await models.brand.findAndCountAll({
-            limit: parseInt(limit),
-            offset,
+        const data = await models.brand.findAll({
             where: {
                 ...(name && { name: { [Op.like]: `${name}%` } })
             },
             attributes: {
                 include: [
                     [
-                        models.sequelize.literal(`(
-                    SELECT COUNT(*)
-                    FROM products AS p
-                    WHERE p.brandSlug = brand.slug
-                  )`),
-                        'productsCount'
+                        fn("COUNT", col("products.id")),
+                        "productsCount"
                     ]
                 ]
             },
+            include: [
+                {
+                    model: models.product,
+                    as: "products",
+                    attributes: [],
+                    required: false
+                }
+            ],
+            group: ["brand.id"],
+            limit: parseInt(limit),
+            offset,
+            subQuery: false,
+            order: [["id", "ASC"]]
         });
 
-        const dataWithImageUrl = rows.map(brand => {
-            const brandJson = brand.toJSON();
-            // for Image
-            if (brandJson.image) {
-                brandJson.image = `${process.env.baseUrl}/${brandJson.image.replace(/\\/g, '/')}`;
+        const total = await models.brand.count({
+            where: {
+                ...(name && { name: { [Op.like]: `${name}%` } })
             }
-            return brandJson
         });
 
         res.status(200).json({
             status: true,
-            total: count,
-            data: dataWithImageUrl
-        })
+            total,
+            data
+        });
     } catch (e) {
+        console.error(e);
         res.status(500).json({
             status: false,
             message: "server error",
             error: e
-        })
+        });
     }
-}
+};
 
-const addNew = async (req, res) => {
+const create = async (req, res) => {
     let imageUrl;
     const { name } = req.body
 
@@ -91,7 +93,7 @@ const addNew = async (req, res) => {
 }
 
 const update = async (req, res) => {
-    const { brandId } = req.params
+    const { id } = req.params
     const { name } = req.body
 
     if (!name) {
@@ -104,11 +106,9 @@ const update = async (req, res) => {
         })
     }
 
-
     try {
         const slug = slugify(name)
-
-        const oldBrand = await models.brand.findByPk(brandId);
+        const oldBrand = await models.brand.findByPk(id);
 
         const newData = {
             name,
@@ -117,21 +117,11 @@ const update = async (req, res) => {
             ...(req.imageBase64 ? { placeholder: req.imageBase64 } : {}),
         }
 
-
-        const [updatedRows] = await models.brand.update(
-            newData,
-            {
-                where: {
-                    id: brandId,
-                },
-            }
-        );
-
+        const [updatedRows] = await models.brand.update(newData, { where: { id } });
 
         if (updatedRows > 0 && req.image) {
             deleteFile(oldBrand.image);
         }
-
 
         res.status(200).json({
             status: true,
@@ -148,11 +138,11 @@ const update = async (req, res) => {
     }
 }
 
-const deleteBrand = async (req, res) => {
-    const { brandId } = req.params
+const destroy = async (req, res) => {
+    const { id } = req.params
 
     try {
-        const brand = await models.brand.findByPk(brandId)
+        const brand = await models.brand.findByPk(id)
         if (!brand) {
             return res.status(404).json({
                 status: false,
@@ -176,13 +166,8 @@ const deleteBrand = async (req, res) => {
 
         deleteFile(brand.image)
 
-        await models.brand.destroy(
-            {
-                where: {
-                    id: brandId,
-                },
-            }
-        );
+        await models.brand.destroy({ where: { id } })
+
         res.status(200).json({
             status: true,
             message: "brand deleted successfully",
@@ -195,4 +180,4 @@ const deleteBrand = async (req, res) => {
     }
 }
 
-module.exports = { all, addNew, update, deleteBrand }
+module.exports = { all, create, update, destroy }

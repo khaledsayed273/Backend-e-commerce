@@ -2,6 +2,13 @@
 const {
   Model
 } = require('sequelize');
+
+function generateSKU() {
+  const prefix = "SKU";
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `${prefix}-${random}`;
+}
+
 module.exports = (sequelize, DataTypes) => {
   class product extends Model {
 
@@ -26,13 +33,9 @@ module.exports = (sequelize, DataTypes) => {
       product.belongsTo(models.brand, {
         foreignKey: 'brandSlug',
         targetKey: 'slug',
-        as: 'brand',
+        as: 'brand'
       });
-      
-      product.hasMany(models.product_option, { foreignKey: 'productId', as: 'options' });
       product.hasMany(models.product_translations, { foreignKey: 'productId', as: 'translations' });
-      product.hasMany(models.order_item, { foreignKey: 'productId', as: 'orderItems' });
-      product.hasMany(models.cart_item, { foreignKey: 'productId', as: 'cartItems' });
       product.hasMany(models.review, { foreignKey: 'productId', as: 'reviews' });
     }
   }
@@ -40,6 +43,10 @@ module.exports = (sequelize, DataTypes) => {
     slug: DataTypes.STRING,
     price: DataTypes.DECIMAL(10, 2),
     discount: DataTypes.DECIMAL(10, 2),
+    sku: {
+      type: DataTypes.STRING,
+      unique: true,
+    },
     quantity: DataTypes.INTEGER,
     categorySlug: DataTypes.STRING,
     subCategorySlug: DataTypes.STRING,
@@ -52,9 +59,17 @@ module.exports = (sequelize, DataTypes) => {
     isVisible: DataTypes.BOOLEAN,
     averageRating: DataTypes.FLOAT,
     reviewsCount: DataTypes.INTEGER,
+    variants: DataTypes.JSON
   }, {
     sequelize,
     modelName: 'product',
+    hooks: {
+      beforeCreate: (product) => {
+        if (!product.sku) {
+          product.sku = generateSKU();
+        }
+      }
+    }
   });
   return product;
 };

@@ -4,7 +4,7 @@ const { Worker } = require("worker_threads");
 const convertImageToBase64 = async (req, res, next) => {
   try {
 
-    const imageUrl = req.image;
+    const imageUrl = req.image || req.logo;
 
     if (!imageUrl) return next();
 
@@ -21,7 +21,7 @@ const convertImageToBase64 = async (req, res, next) => {
       });
     });
 
-    req.imageBase64 = base64; // ضفها للـ req لاستخدامها لاحقاً
+    req.imageBase64 = base64;
     next();
   } catch (error) {
     console.error("❌ Image to base64 Error:", error.message);

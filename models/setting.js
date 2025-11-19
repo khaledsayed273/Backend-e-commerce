@@ -4,17 +4,20 @@ const {
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class setting extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
+
     static associate(models) {
       // define association here
     }
   }
   setting.init({
-    logo: DataTypes.STRING,
+    logo: {
+      type: DataTypes.STRING,
+      get() {
+        const value = this.getDataValue('logo');
+        if (!value) return null;
+        return `${process.env.baseUrl}/${value.replace(/\\/g, '/')}`;
+      }
+    },
     placeholder: DataTypes.TEXT('long'),
     address: DataTypes.STRING,
     email: DataTypes.STRING,

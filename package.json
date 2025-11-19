@@ -7,7 +7,10 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "migrate": "sequelize db:migrate",
+    "drop": "sequelize db:migrate:undo:all",
+    "seed": "sequelize db:seed:all"
   },
   "author": "",
   "license": "ISC",
@@ -15,7 +18,9 @@
   "dependencies": {
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
-    "compression": "^1.8.0",
+    "cheerio": "^1.1.2",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
@@ -24,10 +29,13 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.0",
     "mysql2": "^3.14.1",
+    "node-cron": "^4.2.1",
     "nodemon": "^3.1.10",
+    "sanitize-html": "^2.17.0",
     "sequelize": "^6.37.7",
     "sharp": "^0.34.2",
     "slugify": "^1.6.6",
+    "striptags": "^3.2.0",
     "validator": "^13.15.0"
   }
 }
